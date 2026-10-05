@@ -18,28 +18,54 @@ Behavior:
   - Retries 429/5xx with exponential backoff
   - --dry-run prints what would change without calling API
 """
-import argparse, json, urllib.request, urllib.error, subprocess, base64, sys, time
+import argparse, json, urllib.request, urllib.error, os, sys, time
 
 MAX_LEN = 350
 
 
+def _load_dotenv() -> None:
+    here = os.path.dirname(os.path.realpath(__file__))
+    env_path = os.path.normpath(os.path.join(here, '..', '.env'))
+    if not os.path.isfile(env_path):
+        return
+    with open(env_path) as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith('#') or '=' not in line:
+                continue
+            k, v = line.split('=', 1)
+            k, v = k.strip(), v.strip()
+            if len(v) >= 2 and v[0] == v[-1] and v[0] in ('"', "'"):
+                v = v[1:-1]
+            os.environ.setdefault(k, v)
+
+
+_load_dotenv()
+
+
 def get_token() -> str:
-    raw = subprocess.check_output(
-        ['security', 'find-generic-password', '-s', 'gh:github.com', '-w']
-    ).decode().strip()
-    if raw.startswith('go-keyring-base64:'):
-        return base64.b64decode(raw.split(':', 1)[1]).decode()
-    return raw
+    tok = os.environ.get('GITHUB_TOKEN')
+    if not tok:
+        raise RuntimeError(
+            'GITHUB_TOKEN env var is required.\n'
+            '  export GITHUB_TOKEN=ghp_xxx   # classic PAT, scope: repo (read+write)'
+        )
+    return tok
 
 
 def sanitize(desc: str) -> str:
-    """Strip control chars + truncate to MAX_LEN."""
-    # remove newlines, tabs, control chars
+    """Strip control chars + truncate to MAX_LEN at a semantic boundary."""
     bad = ''.join(chr(c) for c in range(32) if c not in (9,)) + chr(127)
     for ch in bad:
         desc = desc.replace(ch, ' ')
     if len(desc) > MAX_LEN:
-        desc = desc[: MAX_LEN - 1] + '…'
+        boundary = ' :/-—'
+        limit = MAX_LEN - 1
+        cut = max((desc.rfind(ch, limit - 6, limit) for ch in boundary), default=-1)
+        if cut > 0:
+            desc = desc[:cut].rstrip() + '…'
+        else:
+            desc = desc[:limit] + '…'
     return desc.strip()
 
 
@@ -91,6 +117,8 @@ def main():
     if args.limit > 0:
         items = items[: args.limit]
         print(f'Limiting to first {len(items)} updates')
+
+    os.makedirs('/tmp/github-desc', exist_ok=True)
 
     token = args.token or get_token()
     api = 'https://api.github.com'

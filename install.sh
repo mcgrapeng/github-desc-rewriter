@@ -3,12 +3,12 @@
 # Claude Code / Codex CLI / OpenCode / EasyCode.
 #
 # Strategy: symlink (single source of truth, no duplication).
-# OpenCode also gets command/ghd.md copied to ~/.config/opencode/command/.
+# OpenCode also gets command/gdr.md copied to ~/.config/opencode/command/.
 
 set -e
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 NAME="github-desc-rewriter"
-CMD="ghd"
+CMD="gdr"
 
 CLAUDE_DIR="${HOME}/.claude/skills"
 CODEX_DIR="${HOME}/.codex/skills"
@@ -21,7 +21,7 @@ warn() { printf "  \033[33m!\033[0m %s\n" "$*"; }
 fail() { printf "  \033[31m✗\033[0m %s\n" "$*"; exit 1; }
 
 echo ""
-echo "⚡ github-desc-rewriter · /ghd skill (Claude Code + Codex + OpenCode + EasyCode)"
+echo "⚡ github-desc-rewriter · /gdr skill (Claude Code + Codex + OpenCode + EasyCode)"
 echo "   源目录: $HERE"
 echo ""
 
@@ -80,18 +80,18 @@ echo ""
 echo "🎉 安装完成!"
 echo ""
 echo "触发方式:"
-echo "  Claude Code → /ghd [owner]   (owner 缺省 mcgrapeng)"
-echo "  Codex CLI   → \$ghd [owner]"
-echo "  OpenCode    → /ghd [owner]"
-echo "  EasyCode    → /ghd [owner]"
+echo "  Claude Code → /gdr [owner]   (owner 缺省 mcgrapeng)"
+echo "  Codex CLI   → \$gdr [owner]"
+echo "  OpenCode    → /gdr [owner]"
+echo "  EasyCode    → /gdr [owner]"
 echo ""
 echo "自然语言触发(四家都支持):"
 echo "  「批量改 GitHub 介绍」「按 * / * / 解决：* 重写所有仓库 description」"
-echo "  「统一 mcgrapeng 仓库描述格式」"
+echo "  「统一仓库描述格式」"
 echo ""
 echo "前置条件:"
-echo "  • macOS keychain 已有 gh:github.com 条目(gh auth login 时保存)"
-echo "  • 凭据有 repo 写权限"
+echo "  • cp .env.example .env   然后编辑填入真实 GITHUB_TOKEN (scope: repo 读写)"
+echo "  • .env 已 gitignore, 不会被提交"
 echo ""
 echo "卸载:"
 echo "  $HERE/uninstall.sh"

@@ -6,16 +6,37 @@ Usage:
 
 Output JSON: list of {name, description, language, topics, stars, updated_at, html_url}
 """
-import argparse, json, urllib.request, urllib.error, subprocess, base64, sys, time
+import argparse, json, urllib.request, urllib.error, os, sys, time
+
+
+def _load_dotenv() -> None:
+    here = os.path.dirname(os.path.realpath(__file__))
+    env_path = os.path.normpath(os.path.join(here, '..', '.env'))
+    if not os.path.isfile(env_path):
+        return
+    with open(env_path) as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith('#') or '=' not in line:
+                continue
+            k, v = line.split('=', 1)
+            k, v = k.strip(), v.strip()
+            if len(v) >= 2 and v[0] == v[-1] and v[0] in ('"', "'"):
+                v = v[1:-1]
+            os.environ.setdefault(k, v)
+
+
+_load_dotenv()
 
 
 def get_token() -> str:
-    raw = subprocess.check_output(
-        ['security', 'find-generic-password', '-s', 'gh:github.com', '-w']
-    ).decode().strip()
-    if raw.startswith('go-keyring-base64:'):
-        return base64.b64decode(raw.split(':', 1)[1]).decode()
-    return raw
+    tok = os.environ.get('GITHUB_TOKEN')
+    if not tok:
+        raise RuntimeError(
+            'GITHUB_TOKEN env var is required.\n'
+            '  export GITHUB_TOKEN=ghp_xxx   # classic PAT, scope: repo (read+write)'
+        )
+    return tok
 
 
 def gh_get(url: str, token: str, max_pages: int = 20) -> list:

@@ -3,7 +3,7 @@
 
 set -e
 NAME="github-desc-rewriter"
-CMD="ghd"
+CMD="gdr"
 
 remove_symlink() {
     local target="$1"

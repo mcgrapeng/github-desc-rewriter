@@ -1,6 +1,6 @@
 ---
 name: github-desc-rewriter
-description: 批量按指定格式重写 GitHub 用户所有仓库的 description。流程：API 拉全部仓库 + 当前 description → 宿主 LLM 按统一格式生成新描述（是什么 / 能干什么 / 解决什么问题 — 用户痛点）→ 脚本批量 PATCH → 验证。当用户说「把我的 GitHub 仓 description 全部改成中文」「按 * / * / 解决：* 格式重写所有仓库」「批量改 GitHub 介绍」「把我的项目统一格式」时触发。触发短语：「批量改 GitHub 介绍」「统一仓库描述格式」「重写 mcgrapeng 所有仓库 description」「批量改 GitHub description」「format my GitHub repos」。
+description: 批量按指定格式重写 GitHub 用户所有仓库的 description。流程：API 拉全部仓库 + 当前 description → 宿主 LLM 按统一格式生成新描述（是什么 / 能干什么 / 解决什么问题 — 用户痛点）→ 脚本批量 PATCH → 验证。当用户说「把我的 GitHub 仓 description 全部改成中文」「按 * / * / 解决：* 格式重写所有仓库」「批量改 GitHub 介绍」「把我的项目统一格式」时触发。触发短语：「批量改 GitHub 介绍」「统一仓库描述格式」「重写所有仓库 description」「批量改 GitHub description」「format my GitHub repos」。
 allowed-tools: Bash, Read, Write, Edit, WebFetch
 ---
 
@@ -21,16 +21,18 @@ allowed-tools: Bash, Read, Write, Edit, WebFetch
 
 ## 触发命令
 
-- **Claude Code / OpenCode / EasyCode**：`/ghd [owner]`（缺省 owner = `mcgrapeng`）
-- **Codex CLI**：`$ghd [owner]`
-- **自然语言**：「批量改 GitHub 介绍」「统一仓库描述」「重写 mcgrapeng 所有仓库 description」
+- **Claude Code / OpenCode / EasyCode**：`/gdr [owner]`（缺省 owner = `mcgrapeng`）
+- **Codex CLI**：`$gdr [owner]`
+- **自然语言**：「批量改 GitHub 介绍」「统一仓库描述」「重写所有仓库 description」
 
 ## 宿主 LLM 的执行流程（**宿主 LLM 必须按顺序执行**）
+
+> **前置**: 宿主 LLM 须确认 `GITHUB_TOKEN` 已设置。来源优先级: shell `export` > 工程根目录 `.env` 文件 > 报错。脚本对无 token 情况会 `RuntimeError` 退出。`.env` 在 `.gitignore`，**永不可提交**；可参考 `.env.example`。
 
 ### 阶段 1 — 拉数据（脚本完成）
 
 ```bash
-SKILL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd || dirname "$(which ghd 2>/dev/null)")"
+SKILL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" 2>/dev/null && pwd || dirname "$(which gdr 2>/dev/null)")"
 # 兜底用绝对路径
 SKILL_DIR="${SKILL_DIR:-~/.config/opencode/skills/github-desc-rewriter}"
 python3 "$SKILL_DIR/scripts/list_repos.py" --owner <owner> --out /tmp/<owner>_repos.json
@@ -118,7 +120,7 @@ python3 "$SKILL_DIR/scripts/apply_descs.py" \
 - 「批量改 GitHub 介绍」
 - 「按 * / * / 解决：* 格式重写所有仓库」
 - 「统一仓库描述格式」
-- 「重写 mcgrapeng 所有仓库 description」
+- 「重写所有仓库 description」
 - 「format my GitHub repos」
 - 「按这个格式批量改」
 
@@ -130,6 +132,8 @@ python3 "$SKILL_DIR/scripts/apply_descs.py" \
 ```
 
 ## 手动调用
+
+凭据用 `.env` 管（`cp .env.example .env` 后填入），也支持 shell `export` 覆盖：
 
 ```bash
 # 1. 拉仓库
