@@ -257,7 +257,7 @@ export GITHUB_TOKEN=ghp_xxx   # classic PAT, scope: repo
 python3 scripts/list_repos.py --owner mcgrapeng --out /tmp/mcgrapeng_repos.json
 
 # 2. 让 LLM 生成新描述到 /tmp/mcgrapeng_new_descs.json
-#    格式：{ "repo-name": "Python · xxx / xxx / 解决:xxx", ... }
+#    格式：{ "repo-name": "xxx 是什么 / xxx 能干什么 / 解决:xxx / 何时选:xxx", ... }
 
 # 3. dry-run（必跑）
 python3 scripts/apply_descs.py \
