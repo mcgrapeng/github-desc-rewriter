@@ -5,7 +5,7 @@ Usage:
     python3 apply_descs.py \\
         --repos /tmp/repos.json \\
         --new-descs /tmp/new_descs.json \\
-        --owner mcgrapeng [--dry-run] [--token <ghp_xxx>]
+        [--owner <login>] [--dry-run] [--token <ghp_xxx>]
 
 Reads:
   - repos.json     : output of list_repos.py (for cross-checking names)
@@ -17,10 +17,14 @@ Behavior:
   - Replaces \\n with ' / ' (GitHub API rejects newlines)
   - Retries 429/5xx with exponential backoff
   - --dry-run prints what would change without calling API
+  - Backs up current descriptions before PATCHing (rollback)
+  - Validates the 4-label format and warns on violations
 """
-import argparse, json, urllib.request, urllib.error, os, sys, time
+import argparse, json, urllib.request, urllib.error, os, subprocess, sys, time
 
-MAX_LEN = 350
+MAX_LEN = 350       # GitHub hard limit
+TARGET_LEN = 150    # format target (skill spec)
+SEGMENTS = ('是什么:', '能干什么:', '解决:', '何时选:')
 
 
 def _load_dotenv() -> None:
@@ -53,6 +57,26 @@ def get_token() -> str:
     return tok
 
 
+def resolve_owner(explicit=None) -> str:
+    """--owner > $GITHUB_USER > `gh api user` (the authenticated account)."""
+    if explicit:
+        return explicit
+    env = os.environ.get('GITHUB_USER')
+    if env:
+        return env.strip()
+    try:
+        out = subprocess.run(['gh', 'api', 'user', '--jq', '.login'],
+                             capture_output=True, text=True, timeout=20)
+        if out.returncode == 0 and out.stdout.strip():
+            return out.stdout.strip()
+    except Exception:
+        pass
+    raise RuntimeError(
+        'cannot determine owner.\n'
+        '  pass --owner <login>, or export GITHUB_USER=<login>, or run `gh auth login`'
+    )
+
+
 def sanitize(desc: str) -> str:
     """Strip control chars + truncate to MAX_LEN at a semantic boundary."""
     bad = ''.join(chr(c) for c in range(32) if c not in (9,)) + chr(127)
@@ -69,16 +93,31 @@ def sanitize(desc: str) -> str:
     return desc.strip()
 
 
+def check_format(desc: str) -> list:
+    """Return format violations for one description (empty list = ok)."""
+    problems = []
+    missing = [s for s in SEGMENTS if s not in desc]
+    if missing:
+        problems.append('缺标签 ' + ','.join(missing))
+    if len(desc) > TARGET_LEN:
+        problems.append(f'超长 {len(desc)}>{TARGET_LEN}')
+    if '\n' in desc or '\r' in desc:
+        problems.append('含换行(API 422)')
+    return problems
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--repos', required=True, help='output of list_repos.py')
     ap.add_argument('--new-descs', required=True, help='{name: desc, ...}')
-    ap.add_argument('--owner', required=True)
+    ap.add_argument('--owner', default=None,
+                    help='GitHub login (default: $GITHUB_USER or the authenticated gh account)')
     ap.add_argument('--token', default=None)
     ap.add_argument('--dry-run', action='store_true')
     ap.add_argument('--limit', type=int, default=0, help='max repos to update (0 = all)')
     args = ap.parse_args()
 
+    owner = resolve_owner(args.owner)
     repos = json.load(open(args.repos))
     new_descs = json.load(open(args.new_descs))
     valid_names = {r['name'] for r in repos}
@@ -95,12 +134,22 @@ def main():
     items = [(k, sanitize(v)) for k, v in new_descs.items() if k in valid_names]
     items = [(k, v) for k, v in items if v != cur_by_name.get(k, '')]
 
+    raw_by_name = {k: v for k, v in new_descs.items() if k in valid_names}
+    problems = [(k, check_format(raw_by_name[k])) for k, _ in items]
+    problems = [(k, p) for k, p in problems if p]
+
     truncated = [(k, len(v)) for k, v in items if len(v) > MAX_LEN]
 
     print(f'Repos to update: {len(items)}')
     print(f'Skipped (unchanged): {len(new_descs) - len(items)}')
     if truncated:
         print(f'⚠️  Truncated to {MAX_LEN} chars: {len(truncated)}')
+    if problems:
+        print(f'⚠️  Format violations: {len(problems)}')
+        for k, p in problems[:10]:
+            print(f'    [{k}] {"; ".join(p)}')
+        if len(problems) > 10:
+            print(f'    ... +{len(problems) - 10} more')
 
     if args.dry_run:
         print('\n--- DRY RUN (no API calls) ---')
@@ -120,13 +169,20 @@ def main():
 
     os.makedirs('/tmp/github-desc', exist_ok=True)
 
+    # backup current descriptions so the batch is rollback-able
+    backup_path = f'/tmp/github-desc/backup_{owner}_{time.strftime("%Y%m%d-%H%M%S")}.json'
+    with open(backup_path, 'w') as f:
+        json.dump({k: cur_by_name.get(k, '') for k, _ in items}, f,
+                  ensure_ascii=False, indent=2)
+    print(f'Backup of old descriptions: {backup_path}')
+
     token = args.token or get_token()
     api = 'https://api.github.com'
 
     success = fail = unchanged = 0
     results = []
     for i, (name, desc) in enumerate(items, 1):
-        url = f'{api}/repos/{args.owner}/{name}'
+        url = f'{api}/repos/{owner}/{name}'
         data = json.dumps({'description': desc}).encode()
         req = urllib.request.Request(url, data=data, method='PATCH', headers={
             'Authorization': f'Bearer {token}',

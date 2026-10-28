@@ -2,11 +2,13 @@
 """List all repos for a GitHub owner with current metadata.
 
 Usage:
-    python3 list_repos.py --owner mcgrapeng [--out /tmp/repos.json]
+    python3 list_repos.py [--owner <login>] [--out /tmp/repos.json]
+
+Owner resolution order: --owner > $GITHUB_USER > `gh api user` (authenticated account).
 
 Output JSON: list of {name, description, language, topics, stars, updated_at, html_url}
 """
-import argparse, json, urllib.request, urllib.error, os, sys, time
+import argparse, json, urllib.request, urllib.error, os, subprocess, sys, time
 
 
 def _load_dotenv() -> None:
@@ -37,6 +39,26 @@ def get_token() -> str:
             '  export GITHUB_TOKEN=ghp_xxx   # classic PAT, scope: repo (read+write)'
         )
     return tok
+
+
+def resolve_owner(explicit=None) -> str:
+    """--owner > $GITHUB_USER > `gh api user` (the authenticated account)."""
+    if explicit:
+        return explicit
+    env = os.environ.get('GITHUB_USER')
+    if env:
+        return env.strip()
+    try:
+        out = subprocess.run(['gh', 'api', 'user', '--jq', '.login'],
+                             capture_output=True, text=True, timeout=20)
+        if out.returncode == 0 and out.stdout.strip():
+            return out.stdout.strip()
+    except Exception:
+        pass
+    raise RuntimeError(
+        'cannot determine owner.\n'
+        '  pass --owner <login>, or export GITHUB_USER=<login>, or run `gh auth login`'
+    )
 
 
 def gh_get(url: str, token: str, max_pages: int = 20) -> list:
@@ -70,13 +92,15 @@ def gh_get(url: str, token: str, max_pages: int = 20) -> list:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--owner', required=True)
+    ap.add_argument('--owner', default=None,
+                    help='GitHub login (default: $GITHUB_USER or the authenticated gh account)')
     ap.add_argument('--out', default=None)
     ap.add_argument('--token', default=None)
     args = ap.parse_args()
 
+    owner = resolve_owner(args.owner)
     token = args.token or get_token()
-    raw = gh_get(f'https://api.github.com/users/{args.owner}/repos', token)
+    raw = gh_get(f'https://api.github.com/users/{owner}/repos', token)
     repos = []
     for r in raw:
         repos.append({

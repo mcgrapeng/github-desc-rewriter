@@ -1,27 +1,27 @@
 ---
 name: github-desc-rewriter
-description: 批量按指定格式重写 GitHub 用户所有仓库的 description。流程：API 拉全部仓库 + 当前 description → 宿主 LLM 按统一中文格式生成新描述（是什么 / 能干什么 / 解决什么问题 — 用户痛点 / 何时选它 — 决策建议）→ 脚本批量 PATCH → 验证。当用户说「把我的 GitHub 仓 description 全部改成中文」「按 * / * / 解决：* / 何时选它 格式重写所有仓库」「批量改 GitHub 介绍」「把我的项目统一格式」时触发。触发短语：「批量改 GitHub 介绍」「统一仓库描述格式」「重写所有仓库 description」「批量改 GitHub description」「format my GitHub repos」。
+description: 批量按指定格式重写 GitHub 用户所有仓库的 description。流程：API 拉全部仓库 + 当前 description → 宿主 LLM 按统一中文格式生成新描述（是什么: / 能干什么: / 解决: / 何时选: 四段标签式，单行 ≤150 字符）→ 脚本批量 PATCH → 验证。当用户说「把我的 GitHub 仓 description 全部改成中文」「按 是什么/能干什么/解决/何时选 格式重写所有仓库」「批量改 GitHub 介绍」「把我的项目统一格式」时触发。触发短语：「批量改 GitHub 介绍」「统一仓库描述格式」「重写所有仓库 description」「批量改 GitHub description」「format my GitHub repos」。
 allowed-tools: Bash, Read, Write, Edit, WebFetch
 ---
 
 # github-desc-rewriter
 
 > 把 GitHub 用户名下所有仓库的 description（项目简介）按统一中文格式批量重写。
-> 格式：**是什么 / 能干什么 / 解决什么问题 — 用户痛点 / 何时选它 — 决策建议**（单行 `/` 分隔，因为 GitHub API 不接受换行符；**不带语言前缀**；**总长目标 300 字左右，别太短**）
+> 格式：**`是什么: X | 能干什么: Y | 解决: Z | 何时选: W`**（单行，标签 + ` | ` 分隔；GitHub API 拒绝换行符；**不带语言前缀**；**总长 ≤ 150 字符**）
 
 **跨平台**：Claude Code (`~/.claude/skills/`) · Codex CLI (`~/.codex/skills/`) · OpenCode (`~/.config/opencode/skills/`) · EasyCode (`~/.easycode/skills/`)。一次 `install.sh` 同时注册四端。
 
 ## 何时使用本 skill
 
-- 用户说"把我 GitHub 上所有仓库的 description 都按 * / * / 解决：* / 何时选：* 格式重写一遍"
-- 用户给出 GitHub username（默认 `mcgrapeng`），要求批量改简介
+- 用户说"把我 GitHub 上所有仓库的 description 都按 是什么: / 能干什么: / 解决: / 何时选: 格式重写一遍"
+- 用户给出 GitHub username（缺省 = 当前认证账号），要求批量改简介
 - 用户说"统一我所有 GitHub 项目的介绍风格"
 - 用户说"按什么什么结构批量改 GitHub repo 描述"
 - 用户提供了新的描述模板，要应用到所有仓库
 
 ## 触发命令
 
-- **Claude Code / OpenCode / EasyCode**：`/gdr [owner]`（缺省 owner = `mcgrapeng`）
+- **Claude Code / OpenCode / EasyCode**：`/gdr [owner]`（缺省 owner = 当前 GitHub 认证账号：`$GITHUB_USER`，否则 `gh api user`）
 - **Codex CLI**：`$gdr [owner]`
 - **自然语言**：「批量改 GitHub 介绍」「统一仓库描述」「重写所有仓库 description」
 
@@ -41,34 +41,36 @@ python3 "$SKILL_DIR/scripts/list_repos.py" --owner <owner> --out /tmp/<owner>_re
 `list_repos.py` 输出 JSON：
 ```json
 [
-  {"name": "Lodestone", "description": "...", "language": "Python", "topics": [...], "stars": 0, "updated_at": "..."},
+  {"name": "awesome-llm", "description": "...", "language": "Python", "topics": [...], "stars": 0, "updated_at": "..."},
   ...
 ]
 ```
 
 ### 阶段 2 — 生成新描述（**宿主 LLM 介入**，核心环节）
 
-宿主 LLM 读取 `/tmp/<owner>_repos.json`，对**每个仓库**生成一条新 description，**严格遵循**以下格式（单行 `/` 分隔，≤ 350 字符）：
+宿主 LLM 读取 `/tmp/<owner>_repos.json`，对**每个仓库**生成一条新 description，**严格遵循**以下格式（单行，四段标签，≤ 150 字符）：
 
 ```
-一句话是什么 / 能干什么：做了什么 / 解决什么问题 — 用户痛点：具体痛点 / 何时选它 — 决策建议：什么场景选它
+是什么: 一句话说明项目本体 | 能干什么: 具体能力 | 解决: 用户痛点 | 何时选: 决策建议
 ```
 
 示例（实测可用）：
-- `实时聚合 GitHub/HuggingFace/MCP Registry/arXiv 四大平台的 AI 项目情报多源雷达,中文仪表盘呈现 / 抓各平台趋势榜,按 Agent/RAG/代码生成/MCP 等 20 个用途分类,支持增量爬取、关键词过滤与本地部署 / 解决:找 AI 工具要在多个平台来回跳,趋势信息分散且时效差,中英文信息差大,缺一个统一筛选入口 / 何时选:想一站式刷最新 AI 项目、按用途给手头需求找工具时`
+- `是什么: 聚合 GitHub/HuggingFace/arXiv 的 AI 项目雷达 | 能干什么: 抓趋势榜并按 20 个用途分类 | 解决: 找 AI 工具要在多平台来回跳 | 何时选: 想一站式找最新 AI 项目时`
+- `是什么: 自托管 PaaS,开源替代 Vercel/Heroku | 能干什么: 一条命令部署应用与数据库,自动 TLS | 解决: 被商业 PaaS 锁定,升级降价受制于人 | 何时选: 想自己掌控数据与部署链路时`
 
 **生成规则**（宿主 LLM 必须遵守）：
-1. **不读 README** — 只看仓库名 + 当前 description + topics + language，**绝不读 README**，避免 326 个仓库的 context 爆炸
-2. **不知道就说不知道** — 信息不足时基于现有 description 推断，宁可写"参考精选列表"也不要编造细节
-3. **单行** — 严禁 `\n`、emoji 装饰、`/` 之外的分隔符
-4. **总长目标 300 字左右(别太短)** — 每段 50-80 字,充实具体;硬上限 350 字（GitHub API 限制,超出脚本会截断）
-5. **统一使用半角符号** — `:`、`,`、`/`、`—`，不用全角
-6. **分组复用模板** — 同类仓库用同一模板（如 awesome-* 都用 "X 精选列表 / 浏览与发现 / 解决:X 资源分散 / 何时选:找 X 资源时"）
-7. **不加语言前缀** — 描述以「是什么」开头，不用 `Python · `、`TS · ` 等语言/类型前缀
+1. **不读 README** — 只看仓库名 + 当前 description + topics + language，**绝不读 README**，避免几百个仓库的 context 爆炸
+2. **不知道就说不知道** — 信息不足时基于现有 description 推断，宁可写"X 资源合集"也不要编造细节
+3. **单行** — 严禁 `\n`（API 返回 422）、emoji 装饰
+4. **四段标签齐全** — `是什么:` `能干什么:` `解决:` `何时选:` 一个都不能少，段间用 ` | `（空格 + 半角竖线 + 空格）分隔
+5. **总长 ≤ 150 字符** — 每段 20-35 字，精炼具体；硬上限 350（GitHub API 限制,超出脚本会截断）
+6. **统一使用半角符号** — `: `、`,`，不用全角
+7. **分组复用模板** — 同类仓库用同一模板（如 awesome-* 都用 "X 精选列表 / 分类浏览与检索 / X 资源分散 / 找 X 资源时"）
+8. **不加语言前缀** — 描述以「是什么」开头，不用 `Python · `、`TS · ` 等语言/类型前缀
 
 输出：构造一个 Python dict，写入 `/tmp/<owner>_new_descs.json`：
 ```json
-{"Lodestone": "...", "oh-my-openagent": "...", ...}
+{"awesome-llm": "...", "my-cli-tool": "...", ...}
 ```
 
 ### 阶段 3 — 应用（脚本完成，带 dry-run 守卫）
@@ -96,15 +98,15 @@ python3 "$SKILL_DIR/scripts/apply_descs.py" \
 
 ## 关键设计：为什么不一次性脚本生成
 
-- 326 个仓库的描述生成**必须有 LLM 介入**，否则只能用通用模板糊弄
+- 上百个仓库的描述生成**必须有 LLM 介入**，否则只能用通用模板糊弄
 - 脚本只做"无脑 IO"（拉数据 + PATCH），描述质量靠宿主 LLM
-- 这样做的好处：换个描述格式（如 * | * | *）只需要改 SKILL.md，脚本不动
+- 这样做的好处：换个描述格式只需要改 SKILL.md 阶段 2，脚本不动
 
 ## 限制
 
-- GitHub API 限流：5000 次/小时（认证用户）。326 个 PATCH 约 1-2 分钟，**安全**
-- GitHub description 硬限制 350 字符；脚本会校验，超过则自动截断并 warn
-- 不允许换行符（API 422）；脚本会替换为 `/`
+- GitHub API 限流：5000 次/小时（认证用户）。几百个 PATCH 约 1-2 分钟，**安全**
+- GitHub description 硬限制 350 字符；目标 ≤150，脚本会校验，超出则截断并 warn
+- **不允许换行符**（API 422 `description control characters are not allowed`）；只能靠 ` | ` 和标签制造层次
 - 单 GitHub 用户的仓库；不跨用户
 
 ## 输入文件
@@ -113,12 +115,12 @@ python3 "$SKILL_DIR/scripts/apply_descs.py" \
 
 ## 输出
 
-直接修改远端 GitHub 仓库 description —— **不可逆**。dry-run 阶段必须让用户确认。
+直接修改远端 GitHub 仓库 description。脚本会先把旧描述备份到 `/tmp/github-desc/backup_<owner>_<时间戳>.json`，可回滚；dry-run 阶段仍必须让用户确认。
 
 ## 触发短语（自然语言）
 
 - 「批量改 GitHub 介绍」
-- 「按 * / * / 解决：* / 何时选：* 格式重写所有仓库」
+- 「按 是什么/能干什么/解决/何时选 格式重写所有仓库」
 - 「统一仓库描述格式」
 - 「重写所有仓库 description」
 - 「format my GitHub repos」
@@ -133,24 +135,24 @@ python3 "$SKILL_DIR/scripts/apply_descs.py" \
 
 ## 手动调用
 
-凭据用 `.env` 管（`cp .env.example .env` 后填入），也支持 shell `export` 覆盖：
+凭据用 `.env` 管（`cp .env.example .env` 后填入），也支持 shell `export` 覆盖。
+owner 省略时自动取当前认证账号（`$GITHUB_USER` → `gh api user`）：
 
 ```bash
 # 1. 拉仓库
 python3 ~/.config/opencode/skills/github-desc-rewriter/scripts/list_repos.py \
-  --owner mcgrapeng --out /tmp/mcgrapeng_repos.json
+  --out /tmp/<owner>_repos.json
 
-# 2. 让 LLM 生成新描述 → /tmp/mcgrapeng_new_descs.json
+# 2. 让 LLM 生成新描述 → /tmp/<owner>_new_descs.json
 
 # 3. dry-run
 python3 ~/.config/opencode/skills/github-desc-rewriter/scripts/apply_descs.py \
-  --repos /tmp/mcgrapeng_repos.json \
-  --new-descs /tmp/mcgrapeng_new_descs.json \
-  --owner mcgrapeng --dry-run
+  --repos /tmp/<owner>_repos.json \
+  --new-descs /tmp/<owner>_new_descs.json \
+  --dry-run
 
 # 4. 真正执行
 python3 ~/.config/opencode/skills/github-desc-rewriter/scripts/apply_descs.py \
-  --repos /tmp/mcgrapeng_repos.json \
-  --new-descs /tmp/mcgrapeng_new_descs.json \
-  --owner mcgrapeng
+  --repos /tmp/<owner>_repos.json \
+  --new-descs /tmp/<owner>_new_descs.json
 ```

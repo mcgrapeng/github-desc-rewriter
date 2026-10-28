@@ -56,7 +56,7 @@
 
 ## ✨ 改造前后
 
-一个命令，把 326 个仓库的 description 全部拉齐。
+一个命令，把你名下所有仓库的 description 全部拉齐。
 
 <table>
 <tr>
@@ -67,7 +67,7 @@
 <td valign="top">
 
 仓库列表一眼扫过去，风格各异、看不出在做什么：<br><br>
-<code>Lodestone</code> — 空描述<br>
+<code>awesome-llm</code> — 空描述<br>
 <code>Real-time intelligence for emerging AI projects and tools</code> — 英文、看不出解决什么<br>
 <code>🚀 AI 工具发现平台 📊</code> — emoji 堆砌<br>
 一大段 400+ 字符的英文长句，GitHub 首页直接截断
@@ -75,12 +75,12 @@
 </td>
 <td valign="top">
 
-统一为 <code>是什么 / 能干什么 / 解决什么问题 — 用户痛点 / 何时选它 — 决策建议</code>：<br><br>
-<code>实时聚合 GitHub/HuggingFace/MCP Registry/arXiv 四大平台的 AI 项目情报多源雷达,中文仪表盘呈现 / 抓各平台趋势榜,按 Agent/RAG/代码生成/MCP 等 20 个用途分类,支持增量爬取、关键词过滤与本地部署 / 解决:找 AI 工具要在多个平台来回跳,趋势信息分散且时效差,中英文信息差大,缺一个统一筛选入口 / 何时选:想一站式刷最新 AI 项目、按用途给手头需求找工具时</code><br><br>
-<code>自托管 PaaS 平台,Vercel/Netlify/Heroku 开源替代,应用/数据库/容器三件套 / 一条命令部署、自动 TLS、绑定自定义域名,资源与成本自己掌控 / 解决:用商业 PaaS 被平台锁定,升级降价受制于人且迁移成本高 / 何时选:想摆脱 SaaS 锁定、自己掌控数据与部署链路时</code><br><br>
-<code>命令行模糊查找器,交互式匹配文件/命令/历史/列表,基于 fzf / 模糊输入直接定位并执行,预览后回车确认 / 解决:终端候选一多只能逐字精确输入,长路径输入慢且易打错 / 何时选:日常在终端高频找文件、翻历史、跳目录时</code>
+统一为 <code>是什么: … | 能干什么: … | 解决: … | 何时选: …</code>：<br><br>
+<code>是什么: 聚合 GitHub/HuggingFace/arXiv 的 AI 项目雷达 | 能干什么: 抓趋势榜并按 20 个用途分类 | 解决: 找 AI 工具要在多平台来回跳 | 何时选: 想一站式找最新 AI 项目时</code><br><br>
+<code>是什么: 自托管 PaaS,开源替代 Vercel/Heroku | 能干什么: 一条命令部署应用与数据库,自动 TLS | 解决: 被商业 PaaS 锁定,升级降价受制于人 | 何时选: 想自己掌控数据与部署链路时</code><br><br>
+<code>是什么: 终端模糊查找器,基于 fzf | 能干什么: 交互匹配文件/命令/历史,预览回车即执行 | 解决: 候选一多只能逐字精确输入,长路径易打错 | 何时选: 日常高频找文件、翻历史、跳目录时</code>
 
-<br><br>单行、无 emoji、无类型前缀、目标 300 字左右（硬上限 350），排序筛选时自成一路。
+<br><br>单行、无 emoji、无类型前缀、四段标签分明、≤150 字符，排序筛选时自成一路。
 
 </td>
 </tr>
@@ -94,7 +94,7 @@
 |---|---|
 | **风格零散** | 几十上百个仓库描述风格不一，新访客一眼看不出在做什么 |
 | **不会写简介** | 写仓库时只写 `init commit` 或抄模板，没写"做什么 / 解决什么" |
-| **批量改太枯燥** | 手动改 326 个仓库易错，需要工具但不想造轮子 |
+| **批量改太枯燥** | 手动改几百个仓库易错，需要工具但不想造轮子 |
 | **中文上下文** | 海外仓库多是英文描述，中文用户浏览 GitHub 同样需要入口 |
 
 ---
@@ -103,8 +103,8 @@
 
 | | | |
 |---|---|---|
-| **跨 4 家 Agent 平台**<br>一次 `install.sh` 同时注册<br>Claude Code / Codex / OpenCode / EasyCode | **LLM 在环**<br>脚本只做无脑 IO（GET + PATCH）<br>质量由宿主 LLM 兜底 | **不读 README**<br>326 个 README 会爆 context<br>只用 仓库名 + 描述 + 语言 + topics |
-| **安全守卫**<br>`--dry-run` 先打 10 条自检<br>350 字符截断 · `\n`→`/` | **自动重试**<br>429 / 5xx 指数退避<br>25 个一批节流 | **零依赖**<br>Python 3.8+ 标准库<br>无需 `pip install` |
+| **跨 4 家 Agent 平台**<br>一次 `install.sh` 同时注册<br>Claude Code / Codex / OpenCode / EasyCode | **LLM 在环**<br>脚本只做无脑 IO（GET + PATCH）<br>质量由宿主 LLM 兜底 | **不读 README**<br>几百个 README 会爆 context<br>只用 仓库名 + 描述 + 语言 + topics |
+| **安全守卫**<br>`--dry-run` 先打 10 条自检<br>格式校验 · 150 字目标 · 旧描述自动备份 | **自动重试**<br>429 / 5xx 指数退避<br>25 个一批节流 | **零依赖**<br>Python 3.8+ 标准库<br>无需 `pip install` |
 
 ---
 
@@ -124,7 +124,7 @@ cp .env.example .env
 ./install.sh
 ```
 
-> 安装默认 owner 为 `mcgrapeng`。要装给别人用：`GITHUB_USER=yourname ./install.sh`
+> owner 不用配置：默认取当前 GitHub 认证账号（`$GITHUB_USER`，否则 `gh api user`）。要改别人的：`/gdr <login>`，或 `export GITHUB_USER=<login>`。
 
 卸载：`./uninstall.sh`
 
@@ -141,7 +141,7 @@ cp .env.example .env
 
 ```
 批量改 GitHub 介绍
-按 * / * / 解决：* 格式重写所有仓库
+按 是什么/能干什么/解决/何时选 格式重写所有仓库
 统一仓库描述格式
 format my GitHub repos
 ```
@@ -168,15 +168,15 @@ format my GitHub repos
 ┌───────────────────────────────────────────────────────────────┐
 │ ③  scripts/apply_descs.py --dry-run  ← 打印前 10 条给 LLM 自检│
 │      scripts/apply_descs.py           ← 真正批量 PATCH        │
-│        · 跳过 unchanged    · 350 字符语义边界截断             │
-│        · \n → / 自动替换  · 429 / 5xx 退避重试                │
+│        · 跳过 unchanged    · 格式校验(四段标签齐全)           │
+│        · 150 字目标/350 截断 · 旧描述自动备份 · 退避重试     │
 │        · 25 个/批 sleep 0.3s · 报告 成功 N / 失败 M / 跳过 K  │
 └───────────────────────────────────────────────────────────────┘
 ```
 
-> **为什么不让脚本生成 description？** 326 个仓库的描述质量**必须**有 LLM 介入，否则只能通用模板糊弄。脚本只做无脑 IO，描述生成交给宿主 LLM。**换格式只改 `SKILL.md` 阶段 2，脚本不动。**
+> **为什么不让脚本生成 description？** 几百个仓库的描述质量**必须**有 LLM 介入，否则只能通用模板糊弄。脚本只做无脑 IO，描述生成交给宿主 LLM。**换格式只改 `SKILL.md` 阶段 2，脚本不动。**
 
-> **为什么不读 README？** 326 个 README 全读会爆 context。只用 仓库名 + 当前描述 + language + topics 推断，同类仓库（如全部 `awesome-*`）复用同一句式。
+> **为什么不读 README？** 几百个 README 全读会爆 context。只用 仓库名 + 当前描述 + language + topics 推断，同类仓库（如全部 `awesome-*`）复用同一句式。
 
 ---
 
@@ -187,58 +187,65 @@ format my GitHub repos
 ### 模板
 
 ```
-一句话是什么 / 能干什么：做了什么 / 解决什么问题 — 用户痛点：具体痛点 / 何时选它 — 决策建议：什么场景选它
+是什么: 一句话说明项目本体 | 能干什么: 具体能力 | 解决: 用户痛点 | 何时选: 决策建议
 ```
 
 ### 硬约束
 
 | 约束 | 值 | 原因 |
 |---|---|---|
-| 总长 | 目标 ~300 字，**别太短**；硬上限 350 | GitHub API 硬限制 |
-| 每段 | 50–80 字，充实具体 | 太短等于没写 |
-| 换行 | 不允许，用 `/` 分隔 | 换行返回 422 |
-| 符号 | 半角 `:` `,` `/` `—` | 风格统一 |
+| 总长 | **≤ 150 字符** | 用户要求；GitHub 硬上限 350，脚本兜底截断 |
+| 段数 | 固定 4 段，四个标签齐全 | 全库一致性，扫读时能对齐 |
+| 每段 | 20–35 字符 | 4 段合计刚好落在 150 内 |
+| 换行 | **不允许** | API 返回 422 `description control characters are not allowed` |
+| 分隔符 | 半角竖线两侧各一个空格 | 四段视觉分层 |
+| 符号 | 半角 `: ` `,` | 风格统一 |
 | emoji | 不使用 | 噪声，非信息 |
 | 类型前缀 | **不加** `Python · ` / `TS · ` 等 | 描述直接以「是什么」开头 |
+
+> GitHub 的 description 是单行字段，换行会被 API 拒绝 —— 层次感只能靠**标签 + 分隔符**造出来，不能靠回车。
 
 ### 四段分别写什么
 
 1. **是什么** —— 一句话说清项目本体（类别 + 关键特征）
 2. **能干什么** —— 具体做了什么、有什么能力
-3. **解决什么问题 — 用户痛点** —— 用户的真实困境，别写产品自夸
-4. **何时选它 — 决策建议** —— 什么场景该选它，给读者一个决策锚点
+3. **解决** —— 用户的真实困境（痛点），别写产品自夸
+4. **何时选** —— 什么场景该选它，给读者一个决策锚点
 
 ### 同类复用模板
 
 | 仓库类型 | 套用句式 |
 |---|---|
-| `awesome-*` 列表 | `X 精选列表 / 浏览与发现 / 解决:X 资源分散 / 何时选:找 X 资源时` |
-| Skill 集合 | `X 工作流集合 / 按需调用现成能力 / 解决:X 重复搭建 / 何时选:需要开箱即用的 X 时` |
-| RAG 框架 | `X 检索增强框架 / 提供文档切分与向量召回 / 解决:检索链路需从零搭 / 何时选:要给 LLM 接私有知识时` |
-| Agent 框架 | `X Agent 编排框架 / 提供多 Agent 分工调度 / 解决:多 Agent 协作难统一 / 何时选:任务需拆给多个 Agent 时` |
-| 编码 Agent | `X 编码 Agent / 提供终端内编程入口 / 解决:AI 编码工具商业版受限 / 何时选:想在 CLI 里直接改代码时` |
-| CLI / TUI 工具 | `X 终端工具 / 提供 X 操作 / 解决:命令行操作靠记忆 / 何时选:日常在终端做 X 时` |
-| MCP Server | `X MCP Server / 把 X 能力暴露给 Agent / 解决:Agent 缺 X 工具 / 何时选:要给 Agent 接入 X 时` |
-| Java 源码仓 | `X 源码阅读 / 拆解内部实现机制 / 解决:只会用不会排查 / 何时选:要读源码理解 X 原理时` |
+| `awesome-*` 列表 | `是什么: X 精选列表 \| 能干什么: 分类浏览与检索 \| 解决: X 资源分散各处 \| 何时选: 找 X 资源时` |
+| Skill 集合 | `是什么: X 工作流集合 \| 能干什么: 按需调用现成能力 \| 解决: 每个项目重复搭建 \| 何时选: 需要开箱即用的 X 时` |
+| RAG 框架 | `是什么: X 检索增强框架 \| 能干什么: 文档切分与向量召回 \| 解决: 检索链路要从零搭 \| 何时选: 要给 LLM 接私有知识时` |
+| Agent 框架 | `是什么: X Agent 编排框架 \| 能干什么: 多 Agent 分工调度 \| 解决: 多 Agent 协作难统一 \| 何时选: 任务要拆给多个 Agent 时` |
+| 编码 Agent | `是什么: X 编码 Agent \| 能干什么: 终端内编程入口 \| 解决: AI 编码工具商业版受限 \| 何时选: 想在 CLI 里直接改代码时` |
+| CLI / TUI 工具 | `是什么: X 终端工具 \| 能干什么: X 操作 \| 解决: 命令行操作靠记忆 \| 何时选: 日常在终端做 X 时` |
+| MCP Server | `是什么: X MCP Server \| 能干什么: 把 X 能力暴露给 Agent \| 解决: Agent 缺 X 工具 \| 何时选: 要给 Agent 接入 X 时` |
+| Java 源码仓 | `是什么: X 源码阅读 \| 能干什么: 拆解内部实现机制 \| 解决: 只会用不会排查 \| 何时选: 要读源码理解 X 原理时` |
 
-不知道细节就泛写，**不要编**：`参考精选列表 / 浏览与发现 / 解决:X 资源分散 / 何时选:找 X 资源时`
+不知道细节就泛写，**不要编**：`是什么: X 资源合集 | 能干什么: 分类浏览与检索 | 解决: X 资料分散难找 | 何时选: 想找 X 资料时`
 
 ### 反例
 
 ```
-❌ Lodestone
+❌ awesome-llm
 
 Real-time intelligence for emerging AI projects and tools
 → 多行，GitHub 直接拒绝（422）
 
-❌ Python · Lodestone 是一个实时聚合 GitHub、HuggingFace、MCP Registry 和 arXiv
+❌ Python · awesome-llm 是一个实时聚合 GitHub、HuggingFace、MCP Registry 和 arXiv
    等多个数据源上 AI 项目情报的多源雷达，它能够帮助用户抓取趋势榜单并按照 20 个
    用途进行分类，最终生成中文友好的仪表盘，从而解决用户在多个平台之间来回跳转
    寻找 AI 工具的痛点问题
-→ 超长 + 加了类型前缀 + 堆成一坨，应拆成四段
+→ 超长 + 加了类型前缀 + 堆成一坨，应拆成四段并压到 150 字内
 
-❌ 🚀 Lodestone: AI 工具发现平台 📊
+❌ 🚀 awesome-llm: AI 工具发现平台 📊
 → emoji 装饰，缺「能干什么 / 何时选」
+
+❌ 实时聚合 GitHub/HuggingFace/arXiv 的 AI 项目雷达,抓趋势榜并按 20 个用途分类,找工具不用满平台跳,想刷最新 AI 项目时
+→ 四段内容都在，但没有标签和分隔符，读者分不清哪句讲什么，等于没分层
 ```
 
 ---
@@ -249,27 +256,27 @@ Real-time intelligence for emerging AI projects and tools
 <summary><strong>手动调用（不用 agent，直接跑脚本）</strong></summary>
 
 凭据优先级：**shell `export` > 项目根 `.env`（gitignored）**。
+owner 省略时自动取当前认证账号（`$GITHUB_USER` → `gh api user`）。
 
 ```bash
 export GITHUB_TOKEN=ghp_xxx   # classic PAT, scope: repo
 
 # 1. 拉全部仓库
-python3 scripts/list_repos.py --owner mcgrapeng --out /tmp/mcgrapeng_repos.json
+python3 scripts/list_repos.py --out /tmp/<owner>_repos.json
 
-# 2. 让 LLM 生成新描述到 /tmp/mcgrapeng_new_descs.json
-#    格式：{ "repo-name": "xxx 是什么 / xxx 能干什么 / 解决:xxx / 何时选:xxx", ... }
+# 2. 让 LLM 生成新描述到 /tmp/<owner>_new_descs.json
+#    格式：{ "repo-name": "是什么: xxx | 能干什么: xxx | 解决: xxx | 何时选: xxx", ... }
 
 # 3. dry-run（必跑）
 python3 scripts/apply_descs.py \
-  --repos /tmp/mcgrapeng_repos.json \
-  --new-descs /tmp/mcgrapeng_new_descs.json \
-  --owner mcgrapeng --dry-run
+  --repos /tmp/<owner>_repos.json \
+  --new-descs /tmp/<owner>_new_descs.json \
+  --dry-run
 
 # 4. 真正执行
 python3 scripts/apply_descs.py \
-  --repos /tmp/mcgrapeng_repos.json \
-  --new-descs /tmp/mcgrapeng_new_descs.json \
-  --owner mcgrapeng
+  --repos /tmp/<owner>_repos.json \
+  --new-descs /tmp/<owner>_new_descs.json
 ```
 
 </details>
@@ -279,11 +286,11 @@ python3 scripts/apply_descs.py \
 
 | 项 | 说明 |
 |---|---|
-| API 限流 | 5000 次/小时（认证用户），326 个 PATCH ≈ 1–2 分钟，安全 |
-| 长度 | 硬上限 350 字符，脚本在语义边界（空格/标点）截断并 warn |
-| 换行符 | GitHub 返回 422，脚本自动 `\n` → `/` |
+| API 限流 | 5000 次/小时（认证用户），几百个 PATCH ≈ 1–2 分钟，安全 |
+| 长度 | 目标 ≤150 字符（硬上限 350），超长时脚本在语义边界截断并 warn |
+| 换行符 | **GitHub 422 拒绝控制字符**，脚本会先剥离再校验；层次靠 `标签 + \|` 造 |
 | 范围 | 单个 GitHub 用户，不跨组织、不跨用户 |
-| 可逆性 | **直接改远端，不可逆** —— dry-run 阶段必须确认 |
+| 可逆性 | 批量执行前旧描述自动备份到 `/tmp/github-desc/backup_<owner>_<时间戳>.json`，可回滚 —— dry-run 阶段仍须确认 |
 
 </details>
 
@@ -316,7 +323,7 @@ github-desc-rewriter/
 │   ├── list_repos.py      ← 拉全部仓库 + 元数据 → JSON
 │   └── apply_descs.py     ← 批量 PATCH（dry-run / sanitize / 重试）
 ├── templates/
-│   └── format.md          ← 描述格式模板（旧版，宿主实际以 SKILL.md 为准）
+│   └── format.md          ← 描述格式模板（宿主实际以 SKILL.md 阶段 2 为准）
 └── assets/
     ├── banner-dark.svg    ← README 深色横幅
     ├── banner-light.svg   ← README 浅色横幅
@@ -335,10 +342,10 @@ github-desc-rewriter/
 
 **`github-desc-rewriter` (`/gdr`)** — batch-rewrites every repo description under one GitHub owner into a single structured Chinese format.
 
-**Target format** (single line, `/` separated, target ~300 chars, hard cap 350):
+**Target format** (single line, four labelled segments, ≤150 chars, hard cap 350):
 
 ```
-what-it-is / what-it-does / problem-it-solves — user pain / when-to-pick-it — decision advice
+是什么: what-it-is | 能干什么: what-it-does | 解决: user pain | 何时选: when-to-pick-it
 ```
 
 **Why it exists** — inconsistent styles across hundreds of repos, `init commit` descriptions, tedious manual bulk edits, and no Chinese entry point for English repos.
@@ -348,7 +355,7 @@ what-it-is / what-it-does / problem-it-solves — user pain / when-to-pick-it �
 - **Cross-platform** — one `install.sh` registers into Claude Code / Codex CLI / OpenCode / EasyCode
 - **LLM-in-the-loop** — scripts do dumb IO only; description quality belongs to the host LLM; swap formats by editing `SKILL.md` phase 2
 - **No README reads** — uses `name + description + language + topics` instead of blowing the context budget
-- **Safety nets** — `--dry-run` preview, 350-char truncation, `\n` → `/`, 429/5xx backoff
+- **Safety nets** — `--dry-run` preview, format check, 150-char target with 350-char fallback, backup of old descriptions, 429/5xx backoff
 - **Zero deps** — Python 3.8+ stdlib only
 
 **Install**
@@ -368,7 +375,7 @@ cp .env.example .env        # fill GITHUB_TOKEN (classic PAT, scope: repo)
 
 Natural language also works on all four: *"batch rewrite GitHub descriptions"*, *"unify repo description style"*, *"format my GitHub repos"*.
 
-**Limits** — 5000 API calls/hr authenticated; 350-char hard cap; newlines rejected (422); single GitHub user only; **not reversible — dry-run is mandatory**.
+**Limits** — 5000 API calls/hr authenticated; 150-char target with a 350-char hard cap; newlines rejected (422, `control characters are not allowed`) so hierarchy comes from labels + separators; single GitHub user only; **dry-run is mandatory** (a backup of the old descriptions is written before the batch PATCH).
 
 </details>
 
